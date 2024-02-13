@@ -7,6 +7,9 @@
 #include <iomanip>
 #include <boost/foreach.hpp>
 #include <boost/algorithm/string.hpp>
+#include <string>
+#include <chrono>
+#include <thread>
 
 using json = nlohmann::json;
 
@@ -516,7 +519,7 @@ namespace tp {
 		}
 
 		BOOST_FOREACH(SIPCall* c, Calls()) {
-			if (c->getId() != call->getId()){
+			if (c->getId() == call->getId()){
 				try {
 					c->HoldCall();
 					aud_med2 = c->getAudioMedia(-1);
@@ -531,59 +534,61 @@ namespace tp {
 		return true;
 	}
 
-	bool TinyPhone::Join(SIPCall* call, SIPCall* call_to_join) {
+	bool TinyPhone::Conference3(SIPCall* call, SIPCall* call_ToJoin, float level) {
+		using namespace std::this_thread;
+    	using namespace std::chrono;
+
+		PJ_LOG(3, (__FILENAME__, "TinyPhone::Conference3  level=%f", level));
+		PJ_LOG(3, (__FILENAME__, "TinyPhone::Conference3  Unhold second call..."));
+
 		try {
-			call_to_join->UnHoldCall();   
+			// Unhold second call
+			call_ToJoin->UnHoldCall();   
 		} catch(...) {
-			PJ_LOG(3, (__FILENAME__, "TinyPhone::Join UnHoldCall Error"));
+			PJ_LOG(3, (__FILENAME__, "TinyPhone::Conference3 UnHoldCall Error"));
 			return false;
 		}
+
+		PJ_LOG(3, (__FILENAME__, "TinyPhone::Conference3  Waiting for a few seconds..."));
+
+    	sleep_for(seconds(3));
 
 		AudioMedia aud_med, aud_med2;
 		try {
 			aud_med = call->getAudioMedia(-1);
-			aud_med2 = call_to_join->getAudioMedia(-1);
+			aud_med2 = call_ToJoin->getAudioMedia(-1);
 		} catch(...) {
-			PJ_LOG(3, (__FILENAME__, "TinyPhone::Join getAudioMedia Error"));
+			PJ_LOG(3, (__FILENAME__, "TinyPhone::Conference3 getAudioMedia Error"));
+			return false;
+		}
+		
+		PJ_LOG(3, (__FILENAME__, "TinyPhone::Conference3 Starting bidirectional audio between call %d and %d...", call->getId(), call_ToJoin->getId()));
+
+		try {
+			// Adjust volume level between calls
+			AudioMediaTransmitParam prm;
+			prm.level = level;
+
+			// start bidirectional audio
+			aud_med.startTransmit2(aud_med2, prm);
+			aud_med2.startTransmit2(aud_med, prm);
+		} catch(...) {
+			PJ_LOG(3, (__FILENAME__, "TinyPhone::Conference3 startTransmit2 Error"));
 			return false;
 		}
 
 		try {
-			aud_med.startTransmit(aud_med2);
-			aud_med2.startTransmit(aud_med);
+			auto ci_portInfo = aud_med.getPortInfo();
+			auto ci_tj_portInfo = aud_med2.getPortInfo();
+
+			PJ_LOG(3, (__FILENAME__, "TinyPhone::Conference3 Transmitting from port %d (%s) to %d (%s)...", ci_portInfo.portId, ci_portInfo.name.c_str(), ci_tj_portInfo.portId, ci_tj_portInfo.name.c_str()));
+			PJ_LOG(3, (__FILENAME__, "TinyPhone::Conference3 Port %d (%s) has %d listener(s)", ci_portInfo.portId, ci_portInfo.name.c_str(), ci_portInfo.listeners.size()));
+			PJ_LOG(3, (__FILENAME__, "TinyPhone::Conference3 Port %d (%s) has %d listener(s)", ci_tj_portInfo.portId, ci_tj_portInfo.name.c_str(), ci_tj_portInfo.listeners.size()));
 		} catch(...) {
-			PJ_LOG(3, (__FILENAME__, "TinyPhone::Join startTransmit Error"));
+			PJ_LOG(3, (__FILENAME__, "TinyPhone::Conference3 Call::getInfo Error"));
 			return false;
 		}
 
 		return true;
-	}
-
-	bool TinyPhone::Unjoin(SIPCall* call, SIPCall* call_to_unjoin) {
-		try {
-			call_to_unjoin->HoldCall();   
-		} catch(...) {
-			PJ_LOG(3, (__FILENAME__, "TinyPhone::Unjoin HoldCall Error"));
-			return false;
-		}
-
-		AudioMedia aud_med, aud_med2;
-		try {
-			aud_med = call->getAudioMedia(-1);
-			aud_med2 = call_to_unjoin->getAudioMedia(-1);
-		} catch(...) {
-			PJ_LOG(3, (__FILENAME__, "TinyPhone::Unjoin getAudioMedia Error"));
-			return false;
-		}
-
-		try {
-			aud_med.stopTransmit(aud_med2);
-			aud_med2.stopTransmit(aud_med);
-		} catch(...) {
-			PJ_LOG(3, (__FILENAME__, "TinyPhone::Unjoin stopTransmit Error"));
-			return false;
-		}
-
-		return true;		
 	}
 }
