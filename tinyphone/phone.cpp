@@ -551,7 +551,7 @@ namespace tp {
 
 		PJ_LOG(3, (__FILENAME__, "TinyPhone::Conference3  Waiting for a few seconds..."));
 
-    	sleep_for(seconds(3));
+		sleep_for(seconds(3));
 
 		AudioMedia aud_med, aud_med2;
 		try {
