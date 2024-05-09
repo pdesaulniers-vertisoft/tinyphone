@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include <mutex>
 #include <condition_variable>
+#include "log.h"
 
 template<class item>
 class channel {
@@ -28,6 +29,8 @@ public:
 		return closed;
 	}
 	void push(const item &i) {
+		PJ_LOG(3, (__FILENAME__, "Pushing event to channel: %s", i));
+
 		std::unique_lock<std::mutex> lock(m);
 		if (closed)
 			throw std::logic_error("put to closed channel");

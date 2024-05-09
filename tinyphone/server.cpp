@@ -131,8 +131,11 @@ void TinyPhoneHttpServer::Start() {
 			std::string data;
 			while (!updates.is_closed()) {
 				if (updates.pop(data, true)) {
-					for (auto u : subscribers)
+					CROW_LOG_INFO << "Channel relayer has received data: " << data;
+					for (auto u : subscribers) {
+						CROW_LOG_INFO << "    Relaying data to subscriber. IP: " << u->get_remote_ip();
 						u->send_text(data);
+					}
 				}
 			}
 			CROW_LOG_INFO << "Exiting Channel Relayer Thread ";

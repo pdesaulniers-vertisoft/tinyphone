@@ -123,7 +123,10 @@ namespace tp {
             GetProductVersion(productVersion);
 
             CROW_LOG_INFO << "Running Product Version: " << productVersion;
-            CROW_LOG_INFO << "Vertisoft Version: " << "2024-02-13";
+
+            CROW_LOG_INFO << "Vertisoft Version: " << "2024-05-09";
+            PJ_LOG(3, (__FILENAME__, "Vertisoft Version: %s", "2024-05-09"));
+
             CROW_LOG_INFO << "Using Transport Protocol: " << ApplicationConfig.transport;
             CROW_LOG_INFO << "Using Transport Port: " << port;
             CROW_LOG_INFO << "Using UA: " << ApplicationConfig.ua();
