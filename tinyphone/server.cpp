@@ -114,6 +114,12 @@ void TinyPhoneHttpServer::Start() {
 				{ "subcription", "created" }
 			};
 			conn.send_text(message.dump());
+
+			json message2 = {
+				{ "message", "welcome (from queue)" },
+				{ "subcription", "created" }
+			};
+			updates.push(message2.dump());
 		})
 			.onclose([&](crow::websocket::connection& conn, const std::string& reason) {
 			CROW_LOG_INFO << "websocket connection closed: %s" << reason;
