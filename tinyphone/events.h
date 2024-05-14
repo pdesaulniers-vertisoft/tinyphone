@@ -10,6 +10,7 @@
 #include "json.h"
 #include "utils.h"
 #include "config.h"
+#include "log.h"
 
 using namespace std;
 using namespace pj;
@@ -43,6 +44,7 @@ public:
 			else
 				event["unregister"] = true;
 			chan->push(event.dump());
+			PJ_LOG(3, (__FILENAME__, "Event published to WS: [%s]", ai.regStatusText.c_str()));
 		}
 	}
 
@@ -61,6 +63,7 @@ public:
 				{ "sid", ci.callIdString },
 			};
 			chan->push(event.dump());
+			PJ_LOG(3, (__FILENAME__, "Event published to WS: [%s]", ci.stateText.c_str()));
 		}
 	}
 
@@ -78,6 +81,7 @@ public:
 				{"state", ci.stateText },
 			};
 			chan->push(event.dump());
+			PJ_LOG(3, (__FILENAME__, "Event published to WS: [%s]", ci.stateText.c_str()));
 		}
 	}
 
